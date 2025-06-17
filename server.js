@@ -79,22 +79,52 @@ app.post('/api/translate', async (req, res) => {
 // AI Assistant endpoint
 app.post('/api/ai-assistant', async (req, res) => {
   try {
+    const { model, messages, temperature, max_tokens } = req.body;
+    
     // Log request
     console.log('AI Assistant Request:', {
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV
+      environment: process.env.NODE_ENV,
+      openAIKey: process.env.OPENAI_API_KEY ? 'Configured' : 'Not Configured'
     });
 
-    // Just pass through the request body
-    res.json(req.body);
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('OpenAI API key is not configured in Heroku');
+      return res.status(500).json({ error: 'OpenAI API key is not configured in Heroku' });
+    }
+
+    const response = await axios.post(
+      'https://api.deepseek.com/v1/chat/completions',
+      {
+        model: model || 'deepseek-chat',
+        messages: messages || [],
+        max_tokens: max_tokens || 500,
+        temperature: temperature || 0.7,
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY.trim()}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    // Log successful response
+    console.log('AI Assistant Response:', {
+      timestamp: new Date().toISOString(),
+      status: 'success'
+    });
+
+    res.json(response.data);
   } catch (error) {
     // Log error
     console.error('AI Assistant Error:', {
       timestamp: new Date().toISOString(),
-      error: error.message
+      error: error.message,
+      response: error.response?.data
     });
     
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.response?.data || error.message });
   }
 });
 
