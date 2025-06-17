@@ -79,7 +79,7 @@ app.post('/api/translate', async (req, res) => {
 // AI Assistant endpoint
 app.post('/api/ai-assistant', async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, model, messages, temperature, max_tokens } = req.body;
     
     // Log API key usage
     console.log('AI Assistant Request:', {
@@ -95,30 +95,39 @@ app.post('/api/ai-assistant', async (req, res) => {
       return res.status(500).json({ error: 'OpenAI API key is not configured' });
     }
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: "You are a helpful travel and food assistant. Provide concise, accurate information about travel destinations, local cuisine, and cultural experiences. Always prioritize safety and cultural sensitivity in your recommendations."
-        },
-        {
-          role: "user",
-          content: message
+    const response = await axios.post(
+      'https://api.deepseek.com/v1/chat/completions',
+      {
+        model: model || 'deepseek-chat',
+        messages: messages || [
+          {
+            role: "system",
+            content: "You are a helpful travel and food assistant. Provide concise, accurate information about travel destinations, local cuisine, and cultural experiences. Always prioritize safety and cultural sensitivity in your recommendations."
+          },
+          {
+            role: "user",
+            content: message
+          }
+        ],
+        max_tokens: max_tokens || 500,
+        temperature: temperature || 0.7,
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
         }
-      ],
-      max_tokens: 500,
-      temperature: 0.7,
-    });
+      }
+    );
 
     // Log successful response
     console.log('AI Assistant Response:', {
       timestamp: new Date().toISOString(),
       status: 'success',
-      tokens: response.usage.total_tokens
+      tokens: response.data.usage?.total_tokens
     });
 
-    res.json({ response: response.choices[0].message.content });
+    res.json(response.data);
   } catch (error) {
     // Log error with API key info
     console.error('AI Assistant Error:', {
