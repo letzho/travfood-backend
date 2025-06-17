@@ -79,64 +79,19 @@ app.post('/api/translate', async (req, res) => {
 // AI Assistant endpoint
 app.post('/api/ai-assistant', async (req, res) => {
   try {
-    const { message, model, messages, temperature, max_tokens } = req.body;
-    
-    // Log API key usage
+    // Log request
     console.log('AI Assistant Request:', {
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV,
-      openAIKey: process.env.OPENAI_API_KEY ? 'Configured' : 'Not Configured',
-      keyLength: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0,
-      keyPrefix: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 4) + '...' : 'None'
+      environment: process.env.NODE_ENV
     });
 
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('OpenAI API key is not configured');
-      return res.status(500).json({ error: 'OpenAI API key is not configured' });
-    }
-
-    const response = await axios.post(
-      'https://api.deepseek.com/v1/chat/completions',
-      {
-        model: model || 'deepseek-chat',
-        messages: messages || [
-          {
-            role: "system",
-            content: "You are a helpful travel and food assistant. Provide concise, accurate information about travel destinations, local cuisine, and cultural experiences. Always prioritize safety and cultural sensitivity in your recommendations."
-          },
-          {
-            role: "user",
-            content: message
-          }
-        ],
-        max_tokens: max_tokens || 500,
-        temperature: temperature || 0.7,
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    // Log successful response
-    console.log('AI Assistant Response:', {
-      timestamp: new Date().toISOString(),
-      status: 'success',
-      tokens: response.data.usage?.total_tokens
-    });
-
-    res.json(response.data);
+    // Just pass through the request body
+    res.json(req.body);
   } catch (error) {
-    // Log error with API key info
+    // Log error
     console.error('AI Assistant Error:', {
       timestamp: new Date().toISOString(),
-      error: error.message,
-      environment: process.env.NODE_ENV,
-      openAIKey: process.env.OPENAI_API_KEY ? 'Configured' : 'Not Configured',
-      keyLength: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0,
-      keyPrefix: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 4) + '...' : 'None'
+      error: error.message
     });
     
     res.status(500).json({ error: error.message });
