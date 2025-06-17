@@ -79,26 +79,58 @@ app.post('/api/translate', async (req, res) => {
 // AI Assistant endpoint
 app.post('/api/ai-assistant', async (req, res) => {
   try {
-    const { prompt } = req.body;
+    const { message } = req.body;
     
-    const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }]
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+    // Log API key usage
+    console.log('AI Assistant Request:', {
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+      openAIKey: process.env.OPENAI_API_KEY ? 'Configured' : 'Not Configured',
+      keyLength: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0,
+      keyPrefix: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 4) + '...' : 'None'
+    });
 
-    res.json(response.data);
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('OpenAI API key is not configured');
+      return res.status(500).json({ error: 'OpenAI API key is not configured' });
+    }
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful travel and food assistant. Provide concise, accurate information about travel destinations, local cuisine, and cultural experiences. Always prioritize safety and cultural sensitivity in your recommendations."
+        },
+        {
+          role: "user",
+          content: message
+        }
+      ],
+      max_tokens: 500,
+      temperature: 0.7,
+    });
+
+    // Log successful response
+    console.log('AI Assistant Response:', {
+      timestamp: new Date().toISOString(),
+      status: 'success',
+      tokens: response.usage.total_tokens
+    });
+
+    res.json({ response: response.choices[0].message.content });
   } catch (error) {
-    console.error('AI Assistant error:', error);
-    res.status(500).json({ error: 'AI Assistant request failed' });
+    // Log error with API key info
+    console.error('AI Assistant Error:', {
+      timestamp: new Date().toISOString(),
+      error: error.message,
+      environment: process.env.NODE_ENV,
+      openAIKey: process.env.OPENAI_API_KEY ? 'Configured' : 'Not Configured',
+      keyLength: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0,
+      keyPrefix: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 4) + '...' : 'None'
+    });
+    
+    res.status(500).json({ error: error.message });
   }
 });
 
