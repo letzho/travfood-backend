@@ -85,12 +85,12 @@ app.post('/api/ai-assistant', async (req, res) => {
     console.log('AI Assistant Request:', {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV,
-      openAIKey: process.env.OPENAI_API_KEY ? 'Configured' : 'Not Configured'
+      deepseekKey: process.env.DEEPSEEK_API_KEY ? 'Configured' : 'Not Configured'
     });
 
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('OpenAI API key is not configured in Heroku');
-      return res.status(500).json({ error: 'OpenAI API key is not configured in Heroku' });
+    if (!process.env.DEEPSEEK_API_KEY) {
+      console.error('DeepSeek API key is not configured in Heroku');
+      return res.status(500).json({ error: 'DeepSeek API key is not configured in Heroku' });
     }
 
     const response = await axios.post(
@@ -103,7 +103,7 @@ app.post('/api/ai-assistant', async (req, res) => {
       },
       {
         headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY.trim()}`,
+          'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY.trim()}`,
           'Content-Type': 'application/json'
         }
       }
