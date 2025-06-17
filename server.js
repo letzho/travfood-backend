@@ -18,6 +18,38 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Test endpoint to verify API keys
+app.get('/api/test-keys', (req, res) => {
+  res.json({
+    message: 'API Keys Status',
+    environment: process.env.NODE_ENV,
+    keys: {
+      googleTranslate: process.env.GOOGLE_TRANSLATE_API_KEY ? 'Configured' : 'Not Configured',
+      openAI: process.env.OPENAI_API_KEY ? 'Configured' : 'Not Configured'
+    },
+    serverTime: new Date().toISOString(),
+    serverUrl: req.protocol + '://' + req.get('host')
+  });
+});
+
+// Add this new endpoint before the error handling middleware
+app.get('/api/test-config', (req, res) => {
+  const config = {
+    serverUrl: process.env.NODE_ENV === 'production' 
+      ? 'https://travfood-backend.herokuapp.com'
+      : 'http://localhost:3000',
+    environment: process.env.NODE_ENV || 'development',
+    keys: {
+      googleTranslate: process.env.GOOGLE_TRANSLATE_API_KEY ? 'Configured' : 'Not Configured',
+      openAI: process.env.OPENAI_API_KEY ? 'Configured' : 'Not Configured'
+    },
+    envFile: process.env.ENV_FILE || 'Not specified'
+  };
+  
+  console.log('Test config endpoint called:', config);
+  res.json(config);
+});
+
 // Translation endpoint
 app.post('/api/translate', async (req, res) => {
   try {
@@ -72,9 +104,20 @@ app.post('/api/ai-assistant', async (req, res) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+  res.json({ 
+    status: 'ok',
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    apiKeys: {
+      googleTranslate: process.env.GOOGLE_TRANSLATE_API_KEY ? 'configured' : 'not configured',
+      openAI: process.env.OPENAI_API_KEY ? 'configured' : 'not configured'
+    }
+  });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
 }); 
